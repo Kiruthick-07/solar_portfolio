@@ -5,9 +5,21 @@ import FeaturedProducts from './Pages/Landing/Featured_Products.jsx'
 import Schemes from './Pages/Landing/Schemes.jsx'
 import Schedule from './Pages/Landing/Schedule.jsx'
 import Calculator from './Pages/Landing/Calculator.jsx'
+import WhatsApp from './Pages/Landing/Whatsapp.jsx'
 
 function App() {
-  return <><Hero /><Status /><Products /><FeaturedProducts /><Schedule /><Schemes /><Calculator /></>
+  return (
+    <>
+      <Hero />
+      <Status />
+      <Products />
+      <FeaturedProducts />
+      <Schedule />
+      <Schemes />
+      <Calculator />
+      <WhatsApp />
+    </>
+  )
 }
 
 export default App
