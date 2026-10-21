@@ -73,62 +73,67 @@ const applications = [
 
 const tabs = ["By Product", "By Application"];
 
-const VISIBLE = 4;
+const useWindowWidth = () => {
+  const [width, setWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1024
+  );
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return width;
+};
 
 const ProductsSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
-  const [startIndex, setStartIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const intervalRef = useRef(null);
+  const width = useWindowWidth();
 
-  // Dataset switches with tab
+  const isMobile = width < 640;
+  const isTablet = width >= 640 && width < 1024;
+  const visibleCount = isMobile ? 1 : isTablet ? 2 : 4;
+
   const activeData = activeTab === 0 ? products : applications;
 
-  // Reset carousel when tab changes
   const handleTabChange = (i) => {
     setActiveTab(i);
     setActiveCard(0);
-    setStartIndex(0);
     setIsPaused(false);
   };
 
-  // Auto-scroll: advances active card every 3.5 s, pauses on hover
   useEffect(() => {
     if (isPaused) return;
     intervalRef.current = setInterval(() => {
-      setActiveCard((prev) => {
-        const next = (prev + 1) % activeData.length;
-        setStartIndex(Math.max(0, Math.min(next, activeData.length - VISIBLE)));
-        return next;
-      });
+      setActiveCard((prev) => (prev + 1) % activeData.length);
     }, 3500);
     return () => clearInterval(intervalRef.current);
   }, [isPaused, activeData]);
-
-  const canPrev = startIndex > 0;
-  const canNext = startIndex + VISIBLE < activeData.length;
 
   const handlePrev = () => {
     clearInterval(intervalRef.current);
     setIsPaused(true);
     setTimeout(() => setIsPaused(false), 8000);
-    const next = (activeCard - 1 + activeData.length) % activeData.length;
-    setActiveCard(next);
-    setStartIndex(Math.max(0, Math.min(next, activeData.length - VISIBLE)));
+    setActiveCard((prev) => (prev - 1 + activeData.length) % activeData.length);
   };
 
   const handleNext = () => {
     clearInterval(intervalRef.current);
     setIsPaused(true);
     setTimeout(() => setIsPaused(false), 8000);
-    const next = (activeCard + 1) % activeData.length;
-    setActiveCard(next);
-    setStartIndex(Math.max(0, Math.min(next, activeData.length - VISIBLE)));
+    setActiveCard((prev) => (prev + 1) % activeData.length);
   };
 
   const featured = activeData[activeCard];
-  const visibleCards = activeData.slice(startIndex, startIndex + VISIBLE);
+
+  // Cards visible in the strip — window around activeCard
+  const startIndex = Math.min(
+    Math.max(activeCard - Math.floor(visibleCount / 2), 0),
+    Math.max(activeData.length - visibleCount, 0)
+  );
+  const visibleCards = activeData.slice(startIndex, startIndex + visibleCount);
 
   return (
     <section
@@ -136,7 +141,7 @@ const ProductsSection = () => {
       style={{
         position: "relative",
         width: "100%",
-        padding: "80px 5% 70px",
+        padding: isMobile ? "50px 5% 50px" : "80px 5% 70px",
         backgroundColor: "#F5FAF5",
         fontFamily: "Inter, system-ui, sans-serif",
         boxSizing: "border-box",
@@ -171,7 +176,6 @@ const ProductsSection = () => {
 
       {/* ── Section Header ── */}
       <div style={{ textAlign: "center", marginBottom: "36px" }}>
-        {/* Eyebrow */}
         <div
           style={{
             display: "flex",
@@ -185,20 +189,15 @@ const ProductsSection = () => {
             letterSpacing: "3px",
           }}
         >
-          <span
-            style={{ width: "32px", height: "2px", backgroundColor: "#20A34A" }}
-          />
+          <span style={{ width: "32px", height: "2px", backgroundColor: "#20A34A" }} />
           OUR PRODUCTS
-          <span
-            style={{ width: "32px", height: "2px", backgroundColor: "#20A34A" }}
-          />
+          <span style={{ width: "32px", height: "2px", backgroundColor: "#20A34A" }} />
         </div>
 
-        {/* Heading */}
         <h2
           style={{
             margin: "0 0 14px",
-            fontSize: "clamp(26px, 3vw, 44px)",
+            fontSize: "clamp(22px, 4vw, 44px)",
             fontWeight: 600,
             lineHeight: 1.18,
             letterSpacing: "-0.8px",
@@ -209,13 +208,12 @@ const ProductsSection = () => {
           <span style={{ color: "#199B43" }}>Every Need</span>
         </h2>
 
-        {/* Subtext */}
         <p
           style={{
             margin: "0 auto 28px",
             maxWidth: "580px",
             color: "#68736D",
-            fontSize: "15px",
+            fontSize: isMobile ? "14px" : "15px",
             lineHeight: 1.75,
           }}
         >
@@ -238,19 +236,16 @@ const ProductsSection = () => {
               key={tab}
               onClick={() => handleTabChange(i)}
               style={{
-                padding: "9px 28px",
+                padding: isMobile ? "8px 18px" : "9px 28px",
                 borderRadius: "50px",
                 border: "none",
                 cursor: "pointer",
-                fontSize: "13.5px",
+                fontSize: isMobile ? "13px" : "13.5px",
                 fontWeight: 500,
                 transition: "all 0.25s ease",
                 backgroundColor: activeTab === i ? "#1A9E47" : "transparent",
                 color: activeTab === i ? "#ffffff" : "#68736D",
-                boxShadow:
-                  activeTab === i
-                    ? "0 3px 10px rgba(26,158,71,0.22)"
-                    : "none",
+                boxShadow: activeTab === i ? "0 3px 10px rgba(26,158,71,0.22)" : "none",
               }}
             >
               {tab}
@@ -259,300 +254,471 @@ const ProductsSection = () => {
         </div>
       </div>
 
-      {/* ── Main Row: Featured Panel + Cards ── */}
+      {/* ── Main layout ── */}
       <div
         style={{
-          display: "flex",
-          alignItems: "stretch",
           maxWidth: "1300px",
           margin: "0 auto",
           position: "relative",
-          paddingLeft: "60px",
-          paddingRight: "60px",
         }}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        {/* Left arrow */}
-        <button
-          onClick={handlePrev}
-          disabled={!canPrev}
-          style={{
-            position: "absolute",
-            left: "0",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            border: "1px solid #D8E8D8",
-            backgroundColor: "#ffffff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: canPrev ? "pointer" : "not-allowed",
-            opacity: canPrev ? 1 : 0.35,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            transition: "all 0.2s ease",
-            zIndex: 2,
-          }}
-        >
-          <ChevronLeft size={18} color="#102D25" />
-        </button>
-
-        {/* ── Featured product left panel ── */}
-        <div
-          style={{
-            width: "220px",
-            flexShrink: 0,
-            paddingRight: "32px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-          }}
-        >
-          <p
-            style={{
-              margin: "0 0 8px",
-              fontSize: "11px",
-              fontWeight: 600,
-              letterSpacing: "2.5px",
-              color: "#1A9E47",
-              textTransform: "uppercase",
-            }}
-          >
-            {featured.tag}
-          </p>
-          <h3
-            style={{
-              margin: "0 0 12px",
-              fontSize: "clamp(20px, 2vw, 28px)",
-              fontWeight: 700,
-              letterSpacing: "-0.4px",
-              color: "#102D25",
-              lineHeight: 1.25,
-            }}
-          >
-            {featured.name}
-          </h3>
-          <p
-            style={{
-              margin: "0 0 22px",
-              fontSize: "14px",
-              lineHeight: 1.7,
-              color: "#68736D",
-            }}
-          >
-            {featured.description}
-          </p>
-          <button
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 22px",
-              borderRadius: "50px",
-              border: "none",
-              backgroundColor: "#1A2E22",
-              color: "#ffffff",
-              fontSize: "13.5px",
-              fontWeight: 500,
-              cursor: "pointer",
-              width: "fit-content",
-              letterSpacing: "0.2px",
-              transition: "background-color 0.2s ease",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#1A9E47")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#1A2E22")
-            }
-          >
-            Learn More <ArrowRight size={15} />
-          </button>
-        </div>
-
-        {/* ── Product cards grid ── */}
-        <div
-          style={{
-            flex: 1,
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "14px",
-          }}
-        >
-          {visibleCards.map((product) => {
-            const isActive = activeCard === product.id;
-            return (
+        {/* ── MOBILE / TABLET: stacked layout ── */}
+        {isMobile || isTablet ? (
+          <div>
+            {/* Featured info card */}
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: "16px",
+                padding: "24px",
+                marginBottom: "20px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "flex-start" : "center",
+                gap: "20px",
+              }}
+            >
+              {/* Image */}
               <div
-                key={product.id}
-                onClick={() => setActiveCard(product.id)}
                 style={{
-                  borderRadius: "16px",
-                  border: isActive
-                    ? "2px solid #1A9E47"
-                    : "2px solid #E5EDE5",
-                  backgroundColor: isActive ? "#F0FAF0" : "#ffffff",
-                  padding: "20px 16px 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  cursor: "pointer",
-                  transition: "all 0.25s ease",
-                  boxShadow: isActive
-                    ? "0 6px 24px rgba(26,158,71,0.12)"
-                    : "0 2px 8px rgba(0,0,0,0.05)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = "#A8D8A8";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 16px rgba(0,0,0,0.08)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.borderColor = "#E5EDE5";
-                    e.currentTarget.style.boxShadow =
-                      "0 2px 8px rgba(0,0,0,0.05)";
-                  }
+                  width: isMobile ? "100%" : "180px",
+                  height: isMobile ? "200px" : "160px",
+                  flexShrink: 0,
+                  borderRadius: "12px",
+                  overflow: "hidden",
+                  backgroundColor: "#E8F5E9",
                 }}
               >
-                {/* Product image */}
-                <div
-                  style={{
-                    width: "100%",
-                    height: "210px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "18px",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    backgroundColor: isActive ? "#E8F5E9" : "#F4F6F4",
-                    transition: "background-color 0.3s ease",
-                  }}
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      transition: "transform 0.4s ease",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.transform = "scale(1.06)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.transform = "scale(1)")
-                    }
-                  />
-                </div>
+                <img
+                  src={featured.image}
+                  alt={featured.name}
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              </div>
 
-                {/* Card footer */}
-                <div
+              {/* Text */}
+              <div style={{ flex: 1 }}>
+                <p
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    width: "100%",
+                    margin: "0 0 6px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    letterSpacing: "2.5px",
+                    color: "#1A9E47",
+                    textTransform: "uppercase",
                   }}
                 >
-                  <span
+                  {featured.tag}
+                </p>
+                <h3
+                  style={{
+                    margin: "0 0 10px",
+                    fontSize: "clamp(18px, 4vw, 26px)",
+                    fontWeight: 700,
+                    color: "#102D25",
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {featured.name}
+                </h3>
+                <p
+                  style={{
+                    margin: "0 0 16px",
+                    fontSize: "14px",
+                    lineHeight: 1.7,
+                    color: "#68736D",
+                  }}
+                >
+                  {featured.description}
+                </p>
+                <button
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 22px",
+                    borderRadius: "50px",
+                    border: "none",
+                    backgroundColor: "#1A2E22",
+                    color: "#ffffff",
+                    fontSize: "13.5px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1A9E47")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#1A2E22")}
+                >
+                  Learn More <ArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+
+            {/* Cards strip with arrows */}
+            <div style={{ position: "relative", padding: "0 44px" }}>
+              {/* Prev */}
+              <button
+                onClick={handlePrev}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  border: "1px solid #D8E8D8",
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  zIndex: 2,
+                }}
+              >
+                <ChevronLeft size={16} color="#102D25" />
+              </button>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${visibleCount}, 1fr)`,
+                  gap: "12px",
+                }}
+              >
+                {visibleCards.map((product) => {
+                  const isActive = activeCard === product.id;
+                  return (
+                    <div
+                      key={product.id}
+                      onClick={() => setActiveCard(product.id)}
+                      style={{
+                        borderRadius: "14px",
+                        border: isActive ? "2px solid #1A9E47" : "2px solid #E5EDE5",
+                        backgroundColor: isActive ? "#F0FAF0" : "#ffffff",
+                        padding: "14px 12px 12px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        cursor: "pointer",
+                        boxShadow: isActive
+                          ? "0 4px 16px rgba(26,158,71,0.12)"
+                          : "0 2px 8px rgba(0,0,0,0.05)",
+                        transition: "all 0.25s ease",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: isMobile ? "130px" : "150px",
+                          borderRadius: "10px",
+                          overflow: "hidden",
+                          backgroundColor: isActive ? "#E8F5E9" : "#F4F6F4",
+                          marginBottom: "12px",
+                        }}
+                      >
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "100%",
+                        }}
+                      >
+                        <span style={{ fontSize: "13px", fontWeight: 500, color: "#102D25" }}>
+                          {product.name}
+                        </span>
+                        <ArrowRight size={14} color={isActive ? "#1A9E47" : "#8A9E8A"} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Next */}
+              <button
+                onClick={handleNext}
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "50%",
+                  border: "1px solid #D8E8D8",
+                  backgroundColor: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  zIndex: 2,
+                }}
+              >
+                <ChevronRight size={16} color="#102D25" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── DESKTOP: original side-by-side layout ── */
+          <div
+            style={{
+              display: "flex",
+              alignItems: "stretch",
+              position: "relative",
+              paddingLeft: "60px",
+              paddingRight: "60px",
+            }}
+          >
+            {/* Left arrow */}
+            <button
+              onClick={handlePrev}
+              style={{
+                position: "absolute",
+                left: "0",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                border: "1px solid #D8E8D8",
+                backgroundColor: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                transition: "all 0.2s ease",
+                zIndex: 2,
+              }}
+            >
+              <ChevronLeft size={18} color="#102D25" />
+            </button>
+
+            {/* Featured panel */}
+            <div
+              style={{
+                width: "220px",
+                flexShrink: 0,
+                paddingRight: "32px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+              }}
+            >
+              <p
+                style={{
+                  margin: "0 0 8px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  letterSpacing: "2.5px",
+                  color: "#1A9E47",
+                  textTransform: "uppercase",
+                }}
+              >
+                {featured.tag}
+              </p>
+              <h3
+                style={{
+                  margin: "0 0 12px",
+                  fontSize: "clamp(20px, 2vw, 28px)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.4px",
+                  color: "#102D25",
+                  lineHeight: 1.25,
+                }}
+              >
+                {featured.name}
+              </h3>
+              <p
+                style={{
+                  margin: "0 0 22px",
+                  fontSize: "14px",
+                  lineHeight: 1.7,
+                  color: "#68736D",
+                }}
+              >
+                {featured.description}
+              </p>
+              <button
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "10px 22px",
+                  borderRadius: "50px",
+                  border: "none",
+                  backgroundColor: "#1A2E22",
+                  color: "#ffffff",
+                  fontSize: "13.5px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  width: "fit-content",
+                  transition: "background-color 0.2s ease",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#1A9E47")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#1A2E22")}
+              >
+                Learn More <ArrowRight size={15} />
+              </button>
+            </div>
+
+            {/* 4-column card grid */}
+            <div
+              style={{
+                flex: 1,
+                display: "grid",
+                gridTemplateColumns: "repeat(4, 1fr)",
+                gap: "14px",
+              }}
+            >
+              {visibleCards.map((product) => {
+                const isActive = activeCard === product.id;
+                return (
+                  <div
+                    key={product.id}
+                    onClick={() => setActiveCard(product.id)}
                     style={{
-                      fontSize: "13.5px",
-                      fontWeight: 500,
-                      color: "#102D25",
+                      borderRadius: "16px",
+                      border: isActive ? "2px solid #1A9E47" : "2px solid #E5EDE5",
+                      backgroundColor: isActive ? "#F0FAF0" : "#ffffff",
+                      padding: "20px 16px 16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      cursor: "pointer",
+                      transition: "all 0.25s ease",
+                      boxShadow: isActive
+                        ? "0 6px 24px rgba(26,158,71,0.12)"
+                        : "0 2px 8px rgba(0,0,0,0.05)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.borderColor = "#A8D8A8";
+                        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.08)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.borderColor = "#E5EDE5";
+                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                      }
                     }}
                   >
-                    {product.name}
-                  </span>
-                  <ArrowRight
-                    size={16}
-                    color={isActive ? "#1A9E47" : "#8A9E8A"}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "210px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: "18px",
+                        borderRadius: "12px",
+                        overflow: "hidden",
+                        backgroundColor: isActive ? "#E8F5E9" : "#F4F6F4",
+                        transition: "background-color 0.3s ease",
+                      }}
+                    >
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          transition: "transform 0.4s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.06)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                      }}
+                    >
+                      <span style={{ fontSize: "13.5px", fontWeight: 500, color: "#102D25" }}>
+                        {product.name}
+                      </span>
+                      <ArrowRight size={16} color={isActive ? "#1A9E47" : "#8A9E8A"} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-        {/* Right arrow */}
-        <button
-          onClick={handleNext}
-          disabled={!canNext}
+            {/* Right arrow */}
+            <button
+              onClick={handleNext}
+              style={{
+                position: "absolute",
+                right: "0",
+                top: "50%",
+                transform: "translateY(-50%)",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                border: "1px solid #D8E8D8",
+                backgroundColor: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                transition: "all 0.2s ease",
+                zIndex: 2,
+              }}
+            >
+              <ChevronRight size={18} color="#102D25" />
+            </button>
+          </div>
+        )}
+
+        {/* ── Dot indicators ── */}
+        <div
           style={{
-            position: "absolute",
-            right: "0",
-            top: "50%",
-            transform: "translateY(-50%)",
-            width: "40px",
-            height: "40px",
-            borderRadius: "50%",
-            border: "1px solid #D8E8D8",
-            backgroundColor: "#ffffff",
             display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            cursor: canNext ? "pointer" : "not-allowed",
-            opacity: canNext ? 1 : 0.35,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            transition: "all 0.2s ease",
-            zIndex: 2,
+            alignItems: "center",
+            gap: "8px",
+            marginTop: "28px",
           }}
         >
-          <ChevronRight size={18} color="#102D25" />
-        </button>
+          {activeData.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveCard(i)}
+              style={{
+                width: activeCard === i ? "28px" : "10px",
+                height: "10px",
+                borderRadius: "6px",
+                border: "none",
+                cursor: "pointer",
+                backgroundColor: activeCard === i ? "#1A9E47" : "#C8DCC8",
+                padding: 0,
+                transition: "all 0.3s ease",
+              }}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* ── Dot indicators ── */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "8px",
-          marginTop: "32px",
-        }}
-      >
-        {activeData.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              setActiveCard(i);
-              setStartIndex(
-                Math.max(0, Math.min(i, activeData.length - VISIBLE))
-              );
-            }}
-            style={{
-              width: activeCard === i ? "28px" : "10px",
-              height: "10px",
-              borderRadius: "6px",
-              border: "none",
-              cursor: "pointer",
-              backgroundColor: activeCard === i ? "#1A9E47" : "#C8DCC8",
-              padding: 0,
-              transition: "all 0.3s ease",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Responsive overrides */}
       <style>{`
-        @media (max-width: 1024px) {
-          #products .products-main-row {
-            flex-direction: column;
-          }
-        }
-        @media (max-width: 768px) {
-          #products .cards-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-        }
+        #products button { outline: none; }
+        #products button:focus-visible { outline: 2px solid #1A9E47; outline-offset: 2px; }
       `}</style>
     </section>
   );
