@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { ArrowRight, Star, Zap, ShieldCheck, TrendingUp, Award } from "lucide-react";
+import { ArrowRight, Star, ShieldCheck } from "lucide-react";
 
 const FONT = "Inter, system-ui, sans-serif";
 const GREEN = "#1A9E47";
 const GREEN_DARK = "#102D25";
 const GREEN_LIGHT = "#2db84b";
-const GREEN_BG = "#F0FAF0";
 const GREEN_BORDER = "#E5EDE5";
 
 /* ── Product Data ── */
@@ -14,15 +13,11 @@ const FEATURED = [
     id: 1,
     name: "Monocrystalline Solar Panel",
     model: "SunPro 550W",
-    tag: "Best Seller",
-    tagColor: "#e65c00",
-    tagBg: "#fff4ee",
     rating: 4.9,
     reviews: 1284,
     price: "₹18,500",
     oldPrice: "₹22,000",
     image: "/solar-panel.png",
-    badge: "Top Rated",
     highlights: ["22.8% efficiency", "25-year warranty", "Anti-reflective coating"],
     category: "Solar Panels",
   },
@@ -30,15 +25,11 @@ const FEATURED = [
     id: 2,
     name: "Hybrid Solar Inverter",
     model: "PowerMax 5kW",
-    tag: "New Arrival",
-    tagColor: "#1a6ea8",
-    tagBg: "#e3f2fd",
     rating: 4.8,
     reviews: 876,
     price: "₹42,000",
     oldPrice: "₹50,000",
     image: "/solar-inverter.png",
-    badge: "Editor's Pick",
     highlights: ["Grid + off-grid mode", "MPPT technology", "Wi-Fi monitoring"],
     category: "Inverters",
   },
@@ -46,15 +37,11 @@ const FEATURED = [
     id: 3,
     name: "LiFePO4 Solar Battery",
     model: "StorePlus 200Ah",
-    tag: "Popular",
-    tagColor: "#7b1fa2",
-    tagBg: "#f3e5f5",
     rating: 4.7,
     reviews: 652,
     price: "₹55,000",
     oldPrice: "₹65,000",
     image: "/solar-battery.png",
-    badge: "Long Life",
     highlights: ["6000+ charge cycles", "BMS protection", "10-year warranty"],
     category: "Batteries",
   },
@@ -62,15 +49,11 @@ const FEATURED = [
     id: 4,
     name: "Galvanised Mounting Structure",
     model: "FixPro 4-Panel",
-    tag: "Durable",
-    tagColor: "#2e7d32",
-    tagBg: "#e8f5e9",
     rating: 4.6,
     reviews: 430,
     price: "₹8,200",
     oldPrice: "₹10,500",
     image: "/mounting-structure.png",
-    badge: "Weather Proof",
     highlights: ["Wind load: 150 km/h", "Hot-dip galvanised", "Tool-free assembly"],
     category: "Structures",
   },
@@ -148,41 +131,6 @@ function ProductCard({ product, isMobile }) {
             transform: hovered ? "scale(1.07)" : "scale(1)",
           }}
         />
-        {/* Tag pill */}
-        <span
-          style={{
-            position: "absolute",
-            top: "12px",
-            left: "12px",
-            padding: "3px 10px",
-            borderRadius: "999px",
-            background: product.tagBg,
-            color: product.tagColor,
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-          }}
-        >
-          {product.tag}
-        </span>
-        {/* Badge */}
-        <span
-          style={{
-            position: "absolute",
-            top: "12px",
-            right: "12px",
-            padding: "3px 9px",
-            borderRadius: "999px",
-            background: GREEN_DARK,
-            color: "#fff",
-            fontSize: "10px",
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-          }}
-        >
-          {product.badge}
-        </span>
       </div>
 
       {/* Card body */}
@@ -413,44 +361,6 @@ export default function FeaturedProducts() {
             </p>
           </div>
 
-          {/* Stats row (desktop only) */}
-          {!isMobile && (
-            <div style={{ display: "flex", gap: "24px", flexShrink: 0 }}>
-              {[
-                { icon: <Award size={18} color={GREEN} />, label: "Top Rated", value: "4.8★ Avg" },
-                { icon: <TrendingUp size={18} color={GREEN} />, label: "Sold", value: "50,000+" },
-                { icon: <Zap size={18} color={GREEN} />, label: "Brands", value: "12+ Premium" },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    textAlign: "center",
-                    padding: "12px 18px",
-                    background: GREEN_BG,
-                    borderRadius: "12px",
-                    border: `1px solid ${GREEN_BORDER}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    {s.icon}
-                  </div>
-                  <div style={{ fontSize: "15px", fontWeight: 800, color: GREEN_DARK }}>
-                    {s.value}
-                  </div>
-                  <div style={{ fontSize: "11px", color: "#68736D", marginTop: "1px" }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* ── Product Cards Grid ── */}

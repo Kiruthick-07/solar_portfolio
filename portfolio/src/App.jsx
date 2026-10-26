@@ -7,8 +7,13 @@ import Schedule from './Pages/Landing/Schedule.jsx'
 import Calculator from './Pages/Landing/Calculator.jsx'
 import Footer from './Pages/Landing/Footer.jsx'
 import WhatsApp from './Pages/Landing/Whatsapp.jsx'
+import ProductsPage from './Pages/ProductsPage.jsx'
 
 function App() {
+  if (window.location.pathname === '/products') {
+    return <ProductsPage />
+  }
+
   return (
     <>
       <Hero />

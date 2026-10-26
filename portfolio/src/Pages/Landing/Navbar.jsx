@@ -10,10 +10,12 @@ import {
 
 const FONT = "'Poppins', system-ui, sans-serif";
 
-const Navbar = () => {
+const Navbar = ({ isStatic = false }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(
+    () => (window.location.pathname === "/products" ? 2 : 0)
+  );
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,20 +30,39 @@ const Navbar = () => {
   }, []);
 
   const navItems = [
-    { name: "Home", href: "#home" },
-    { name: "Solutions", href: "#solutions", dropdown: true },
-    { name: "Products", href: "#products", dropdown: true },
-    { name: "Projects", href: "#projects" },
-    { name: "About", href: "#about" },
-    { name: "Schemes", href: "#resources", dropdown: true },
+    { name: "Home", href: "/" },
+    { name: "Solutions", href: "/#solutions", dropdown: true },
+    { name: "Products", href: "/products", dropdown: true },
+    { name: "Projects", href: "/#projects" },
+    { name: "About", href: "/#about" },
+    { name: "Schemes", href: "/#resources", dropdown: true },
   ];
+
+  const handleNavigation = (event, item, index) => {
+    const [path, hash] = item.href.split("#");
+    const isDifferentPage = path !== window.location.pathname;
+
+    if (isDifferentPage) {
+      return;
+    }
+
+    if (hash) {
+      const target = document.getElementById(hash);
+      if (target) {
+        event.preventDefault();
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    setActiveIndex(index);
+  };
 
   return (
     <>
       {/* NAVBAR HEADER */}
       <header
         style={{
-          position: "fixed",
+          position: isStatic ? "relative" : "fixed",
           top: 0,
           left: 0,
           width: "100%",
@@ -51,10 +72,10 @@ const Navbar = () => {
           alignItems: "center",
           justifyContent: "space-between",
           boxSizing: "border-box",
-          backgroundColor: scrolled ? "rgba(255, 255, 255, 0.96)" : "transparent",
-          backdropFilter: scrolled ? "blur(12px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(0, 0, 0, 0.06)" : "1px solid transparent",
-          boxShadow: scrolled ? "0 4px 20px rgba(0, 0, 0, 0.05)" : "none",
+          backgroundColor: isStatic || scrolled ? "rgba(255, 255, 255, 0.96)" : "transparent",
+          backdropFilter: isStatic || scrolled ? "blur(12px)" : "none",
+          borderBottom: isStatic || scrolled ? "1px solid rgba(0, 0, 0, 0.06)" : "1px solid transparent",
+          boxShadow: isStatic || scrolled ? "0 4px 20px rgba(0, 0, 0, 0.05)" : "none",
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
@@ -126,10 +147,7 @@ const Navbar = () => {
             <a
               key={item.name}
               href={item.href}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveIndex(index);
-              }}
+              onClick={(e) => handleNavigation(e, item, index)}
               className={`nav-link ${index === activeIndex ? "active" : ""}`}
               style={{
                 fontFamily: FONT,
@@ -246,8 +264,7 @@ const Navbar = () => {
               key={item.name}
               href={item.href}
               onClick={(e) => {
-                e.preventDefault();
-                setActiveIndex(index);
+                handleNavigation(e, item, index);
                 setMenuOpen(false);
               }}
               style={{

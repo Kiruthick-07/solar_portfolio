@@ -48,7 +48,6 @@ function GreenSwoosh() {
 export default function Hero() {
   return (
     <div style={{ fontFamily: FONT, backgroundColor: "#fff", overflowX: "hidden" }}>
-      {/* SHARED NAVBAR COMPONENT */}
       <Navbar />
 
       <section
